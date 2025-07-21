@@ -1,12 +1,12 @@
 package webserver;
 
-import static com.sun.org.apache.xerces.internal.impl.XMLEntityManager.createOutputStream;
+
 import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.net.http.HttpResponse;
+
 
 public class HttpRequestTest {
     private String testDirectory = "./src/test/resources/";
