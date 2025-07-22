@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class HttpResponse {
-    private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
     private DataOutputStream dos;
     private String status;
     private Map<String, String> headers = new HashMap<>();

@@ -1,5 +1,7 @@
 package webserver;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
 import util.IOUtils;
 
@@ -10,35 +12,28 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
+
 import static util.HttpRequestUtils.parseQueryString;
 
 public class HttpRequest {
+    private static final Logger log  = LoggerFactory.getLogger(HttpRequest.class);
 
-    Map<String, String> request = new HashMap<>();
-    Map<String, String> parameter;
+    private Map<String, String> request = new HashMap<>();
+    private Map<String, String> parameter;
+    private RequestLine requestLine;
 
     public HttpRequest(InputStream in) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
         String header = reader.readLine();
-        String[] token = header.split(" ");
-
-        request.put("method", token[0]);
-
-        if (request.get("method").equals("GET")){
-            String[] url_param = url_param_split(token[1]);
-            request.put("path",url_param[0]);
-            parameter = parseQueryString(url_param[1]);
-
-        }
-        else {
-            request.put("path", token[1]);
+        if (header == null) {
+            return;
         }
 
+        requestLine = new RequestLine(header);
         String line = reader.readLine();
 
         while (!"".equals(line)){
-
             if (line == null) {
                 break;
             }
@@ -48,19 +43,22 @@ public class HttpRequest {
             line = reader.readLine();
         }
 
-        if (request.get("method").equals("POST")){
+        if (requestLine.getMethod().isPost()){
             String body = IOUtils.readData(reader, Integer.parseInt(request.get("Content-Length")));
             parameter = HttpRequestUtils.parseQueryString(body);
         }
-        line = reader.readLine();
+        else {
+            parameter = requestLine.getParams();
+        }
+
     }
 
-    public String getMethod() {
-        return request.get("method");
+    public HttpMethod getMethod() {
+        return requestLine.getMethod();
     }
 
     public String getPath() {
-        return request.get("path");
+        return requestLine.getPath();
     }
 
     public String getHeader(String name) {
@@ -73,6 +71,30 @@ public class HttpRequest {
 
     private String[] url_param_split(String url){
         return url.split("\\?");
+    }
+
+    private void processRequestLine(String requestLine) {
+        log.debug("request line: {}", requestLine);
+        String[] token = requestLine.split(" ");
+
+        request.put("method", token[0]);
+
+        if (request.get("method").equals("GET")){
+            String[] url_param = url_param_split(token[1]);
+            request.put("path",url_param[0]);
+            parameter = parseQueryString(url_param[1]);
+            return;
+        }
+        request.put("path", token[1]);
+    }
+
+    public boolean isLogin(String cookieValue) {
+        Map<String, String> cookies = HttpRequestUtils.parseCookies(cookieValue);
+        String value = cookies.get("logined");
+        if (value == null) {
+            return false;
+        }
+        return Boolean.parseBoolean(value);
     }
 
 

@@ -30,20 +30,14 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            header_and_length header = headerRead(in);
-            String[] token = header.getHeader().split(" ");
-            int length = header.getLength();
+            HttpRequest request = new HttpRequest(in);
+            String path = request.getPath();
 
-            String url = token[1];
-
-            if(url.startsWith("/user/create")){
-                String body = IOUtils.readData(header.getBufferedReader(), length);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(body);
-
-                User user = new User(params.get("userId")
-                        , params.get("password")
-                        , params.get("name")
-                        , params.get("email"));
+            if(path.equals("/user/create")){
+                User user = new User(request.getParameter("userId")
+                        , request.getParameter("password")
+                        , request.getParameter("name")
+                        , request.getParameter("email"));
 
                 log.debug("User : {}", user);
 
@@ -52,26 +46,19 @@ public class RequestHandler extends Thread {
                 DataOutputStream dos = new DataOutputStream(out);
                 response302Header(dos, "/index.html");
             }
-            else if(url.equals("/user/login")){
-                String body = IOUtils.readData(header.getBufferedReader(), length);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(body);
-
+            else if(path.equals("/user/login")){
                 boolean loginSuccess = false;
 
-                User user = DataBase.findUserById(params.get("userId"));
-                if (user != null && user.getPassword().equals(params.get("password"))) {
+                User user = DataBase.findUserById(request.getParameter("userId"));
+                if (user != null && user.getPassword().equals(request.getParameter("password"))) {
                     loginSuccess = true;
                 }
                 DataOutputStream dos = new DataOutputStream(out);
 
                 loginResponse302Header(dos, loginSuccess);
             }
-            else if(url.equals("/user/list")){
-                Map<String, String> cookies = HttpRequestUtils.parseCookies(header.getCookies());
-
-                boolean isLogined = Boolean.parseBoolean(cookies.get("logined"));
-
-                if (isLogined){
+            else if(path.equals("/user/list")){
+                if (request.isLogin(request.getHeader("Cookie"))){
                     Collection<User> users = DataBase.findAll();  // findAll 호출
 
                     StringBuilder sb = new StringBuilder();
@@ -106,15 +93,15 @@ public class RequestHandler extends Thread {
                 }
 
             }
-            else if(url.endsWith(".css")){
+            else if(path.endsWith(".css")){
                 DataOutputStream dos = new DataOutputStream(out);
-                byte[] body = Files.readAllBytes(new File("webapp" + url).toPath());
+                byte[] body = Files.readAllBytes(new File("webapp" + path).toPath());
                 css200Header(dos, body.length);
                 responseBody(dos, body);
             }
             else {
                 DataOutputStream dos = new DataOutputStream(out);
-                byte[] body = Files.readAllBytes(new File("webapp" + url).toPath());
+                byte[] body = Files.readAllBytes(new File("webapp" + path).toPath());
                 response200Header(dos, body.length);
                 responseBody(dos, body);
             }
@@ -231,22 +218,6 @@ public class RequestHandler extends Thread {
             return header;
         }
 
-        public BufferedReader getBufferedReader() {
-            return reader;
-        }
-
-        public String getCookies() {
-            return cookies;
-        }
-    }
-
-    public boolean loginUser(String userId, String password){
-        if(userId.equals(password)){
-            return true;
-        }
-        else{
-            return false;
-        }
     }
 
     public void setCookie(DataOutputStream dos, boolean loginSuccess) throws IOException {
