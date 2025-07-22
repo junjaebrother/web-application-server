@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class HttpResponse {
     private static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
-    private DataOutputStream dos;
+    private DataOutputStream dos = null;
     private String status;
     private Map<String, String> headers = new HashMap<>();
 
@@ -21,11 +21,32 @@ public class HttpResponse {
         this.dos = new DataOutputStream(out);
     }
 
-    public void forward(String file) throws IOException {
-        byte[] body = Files.readAllBytes(new File("webapp" + file).toPath());
-        response200Header(body.length);
-        processHeaders();
-        responseBody(body);
+    public void forward(String file) {
+        try{
+            byte[] body = Files.readAllBytes(new File("webapp" + file).toPath());
+
+            if (file.endsWith(".css")) {
+                headers.put("Content-Type: ", "text/css\r\n");
+            } else if(file.endsWith(".js")) {
+                headers.put("Content-Type: ", "application/javascript\r\n");
+            } else {
+                headers.put("Content-Type: ", "text/html;charset-utf-8\r\n");
+            }
+            headers.put("Content-Length: ", body.length + "\r\n");
+            response200Header();
+            processHeaders();
+            responseBody(body);
+        } catch(IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    public void forwardBody(String body) {
+        byte[] contents = body.getBytes();
+        headers.put("Content-Type: ", "text/html;charset-utf-8\r\n");
+        headers.put("Content-Length: ", contents.length + "\r\n");
+        response200Header();
+        responseBody(contents);
     }
 
     public void sendRedirect(String file) {
@@ -38,10 +59,8 @@ public class HttpResponse {
         headers.put(key + ": ", value + "\r\n");
     }
 
-    private void response200Header(int lengthOfBodyContent) {
+    private void response200Header() {
         status = "HTTP/1.1 200 OK \r\n";
-        headers.put("Content-Type: ", "text/html;charset=utf-8\r\n");
-        headers.put("Content-Length: ", lengthOfBodyContent + "\r\n");
     }
 
     private void responseBody(byte[] body) {

@@ -3,6 +3,7 @@ package webserver;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
+import webserver.domain.HttpMethod;
 
 import java.io.FileInputStream;
 import java.io.InputStream;

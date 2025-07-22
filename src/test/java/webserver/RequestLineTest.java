@@ -2,6 +2,7 @@ package webserver;
 
 
 import org.junit.Test;
+import webserver.domain.HttpMethod;
 
 import java.util.Map;
 

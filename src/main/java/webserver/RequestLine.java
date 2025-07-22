@@ -3,6 +3,7 @@ package webserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
+import webserver.domain.HttpMethod;
 
 import java.util.HashMap;
 import java.util.Map;
