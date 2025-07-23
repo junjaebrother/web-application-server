@@ -1,5 +1,7 @@
 package webserver;
 
+import db.HttpSessions;
+import model.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
@@ -98,5 +100,13 @@ public class HttpRequest {
         return Boolean.parseBoolean(value);
     }
 
+
+    public HttpCookie getCookies() {
+        return new HttpCookie(getHeader("Cookie"));
+    }
+
+    public HttpSession getSession() {
+        return HttpSessions.getSession(getCookies().getCookie("JSESSIONID"));
+    }
 
 }

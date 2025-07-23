@@ -3,11 +3,14 @@ package webserver;
 import java.io.*;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.Map;
+import java.util.UUID;
 
 import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.HttpRequestUtils;
 import webserver.controller.Controller;
 
 
@@ -28,6 +31,10 @@ public class RequestHandler extends Thread {
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
 
+            if (request.getCookies().getCookie("JSESSIONID") == null) {
+                response.addHeader("Set-Cookie", "JSESSIONID=" + UUID.randomUUID());
+            }
+
             Controller controller = RequestMapping.getController(request.getPath());
 
             if(controller == null) {
@@ -47,6 +54,11 @@ public class RequestHandler extends Thread {
             return "/index.html";
         }
         return path;
+    }
+
+    private String getSessionId(String cookieValue) {
+        Map<String, String> cookies = HttpRequestUtils.parseCookies(cookieValue);
+        return cookies.get("JSESSIONID");
     }
 
 }
